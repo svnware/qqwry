@@ -25,18 +25,10 @@ public:
   int initialize(const std::string& file);
   void destroy();
 
-    
-  // 获得ip所属省、市
-  // 返回数据UTF8编码
-  bool get_ipinfo(const std::string& ipstr, std::string& province, std::string& city);
-
-  // 获得ip所属省市
-  // 返回数据UTF8编码
-  bool get_ipinfo(const std::string& ipstr, std::string& provincecity);
 
   // 获取IP数据库原始信息
   // 返回数据GB2312编码
-  bool get_ip_original_info(const std::string& ipstr, std::string& country, std::string& area, bool utf8 = false);
+  bool get_ip_original_info(const std::string& ipstr, std::string& country, std::string& area);
 
   int utf8togb2312(const std::string& instr, std::string& outstr);
   int gb2312toutf8(const std::string& instr, std::string& outstr);
@@ -87,14 +79,6 @@ private:
 #endif
 
   boost::uint32_t total_record_; // 总记录数
-
-  std::string strgb_province_;
-  std::string strgb_city_;
-  std::string strgb_xizang_;
-  std::string strgb_xinjiang_;
-  std::string strgb_neimeng_;
-  std::string strgb_ningxia_;
-  std::string strgb_guangxi_;
 };
 
 }

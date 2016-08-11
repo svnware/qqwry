@@ -69,22 +69,6 @@ int ip_finder::initialize(const std::string& file)
 		return GetLastError();
 	}
 #else
-  std::string strutf8_province("\347\234\201");
-  std::string strutf8_city("\345\270\202");
-  std::string strutf8_xizang("\350\245\277\350\227\217");
-  std::string strutf8_xinjiang("\346\226\260\347\226\206");
-  std::string strutf8_neimeng("\345\206\205\350\222\231\345\217\244");
-  std::string strutf8_ningxia("\345\256\201\345\244\217");
-  std::string strutf8_guangxi("\345\271\277\350\245\277");
-
-  utf8togb2312(strutf8_province, strgb_province_);
-  utf8togb2312(strutf8_city, strgb_city_);
-  utf8togb2312(strutf8_xizang, strgb_xizang_);
-  utf8togb2312(strutf8_xinjiang, strgb_xinjiang_);
-  utf8togb2312(strutf8_neimeng, strgb_neimeng_);
-  utf8togb2312(strutf8_ningxia, strgb_ningxia_);
-  utf8togb2312(strutf8_guangxi, strgb_guangxi_);
-
 	if (pshare_ == NULL) {
 		int fd = open(file.c_str(), O_RDONLY); 
 		if (-1 == fd) {
@@ -108,8 +92,8 @@ int ip_finder::initialize(const std::string& file)
 #endif
 
 	pbegin_ = pshare_ + get_long4(pshare_);
-  pend_ = pshare_ + get_long4(pshare_ + 4);
-  total_record_ = (get_long4(pshare_ + 4) - get_long4(pshare_)) / RECORD_LEN + 1;  
+	pend_ = pshare_ + get_long4(pshare_ + 4);
+	total_record_ = (get_long4(pshare_ + 4) - get_long4(pshare_)) / RECORD_LEN + 1;  
 
 	return 0;
 }
@@ -134,132 +118,19 @@ void ip_finder::destroy()
 #endif
 }
 
-bool ip_finder::get_ipinfo(const std::string& ipstr, std::string& province, std::string& city)
-{
-  std::string country;
-  std::string area;
-  if (get_ip_original_info(ipstr, country, area)) {
-    size_t pos = std::string::npos;
-    do {
-    	pos = country.find(strgb_province_, 0);
-		if (pos >= 4 && pos != std::string::npos) {
-		  province =  country.substr(0, pos+2);
-		  country.erase(0, pos+2);
-		  break;
-		}
-
-    	pos = country.find(strgb_guangxi_, 0);
-		if (pos != std::string::npos) {
-		  province =  country.substr(0, pos+4);
-		  country.erase(0, pos+4);
-		  break;
-		}
-
-    	pos = country.find(strgb_neimeng_, 0);
-		if (pos != std::string::npos) {
-		  province =  country.substr(0, pos+6);
-		  country.erase(0, pos+6);
-		  break;
-		}
-
-    	pos = country.find(strgb_ningxia_, 0);
-		if (pos != std::string::npos) {
-		  province =  country.substr(0, pos+4);
-		  country.erase(0, pos+4);
-		  break;
-		}
-
-    	pos = country.find(strgb_xinjiang_, 0);
-		if (pos != std::string::npos) {
-		  province =  country.substr(0, pos+4);
-		  country.erase(0, pos+4);
-		  break;
-		}
-
-    	pos = country.find(strgb_xizang_, 0);
-		if (pos != std::string::npos) {
-		  province =  country.substr(0, pos+4);
-		  country.erase(0, pos+4);
-		  break;
-		}
-    } while(false);
-
-    pos = country.find(strgb_city_, 0);
-    if (pos >= 4 && pos != std::string::npos) {
-      city = country.substr(0, pos+2);
-
-      if (province.empty())
-        province = city;
-    }
-
-    if (!province.empty() && city.empty())
-      city = province;
-    else if (province.empty() && !city.empty())
-      province = city;
-    else if (province.empty() && city.empty())
-      province = city = country;
-    else{}
-
-    std::string out;
-    if (0 == gb2312toutf8(province, out)) {
-      province = out;
-    }
-
-    if (0 == gb2312toutf8(city, out)) {
-      city = out;
-    }
-
-    return true;
-  }
-
-  return false;
-}
-
-bool ip_finder::get_ipinfo(const std::string& ipstr, std::string& provincecity)
-{
-  std::string country;
-  std::string area;
-  if (get_ip_original_info(ipstr, country, area)) {
-    size_t pos = country.find(strgb_province_, 0);
-    if (pos >= 4 && pos != std::string::npos) {
-      provincecity =  country.substr(0, pos+2);
-      country.erase(0, pos+2);
-    }
-
-    pos = country.find(strgb_city_, 0);
-    if (pos >= 4 && pos != std::string::npos) {
-      provincecity += country.substr(0, pos+2);
-    }
-
-    if (provincecity.empty())
-      provincecity = country;
-
-    std::string out;
-    if (0 == gb2312toutf8(provincecity, out)) {
-      provincecity = out;
-    } else {
-      provincecity.clear();
-    }
-
-    return true;
-  }
-
-  return false;
-}
-
-bool ip_finder::get_ip_original_info(const std::string& ipstr, std::string& country, std::string& area, bool utf8/* = false*/)
+bool ip_finder::get_ip_original_info(const std::string& ipstr, std::string& country, std::string& area)
 {  
   if (ipstr.empty() || pshare_ == NULL || pbegin_ == NULL || pend_ == NULL || total_record_ == 0)
     return false;
 
   location_t loc;
-	memset(&loc, 0x0, sizeof(location_t)); 
+  memset(&loc, 0x0, sizeof(location_t)); 
 
-	unsigned char* search = pshare_;
+  unsigned char* search = pshare_;
   unsigned char* pos = pshare_;  
   unsigned char* firstip = 0;
  
-  boost::uint32_t ip = htonl(inet_addr(ipstr.c_str()));  
+  boost::uint32_t ip = ntohl(inet_addr(ipstr.c_str()));  
   firstip = pbegin_;  
 
   long l = 0;  
@@ -294,9 +165,9 @@ bool ip_finder::get_ip_original_info(const std::string& ipstr, std::string& coun
   endip = get_long4(pos);
   pos += 4;  
 
-  //boost::uint32_t j = ntohl(beginip);  
+  //boost::uint32_t j = htonl(beginip);  
   //inet_ntop(AF_INET, &j, loc.beginip, INET6_ADDRSTRLEN);
-  //j = ntohl(endip);  
+  //j = htonl(endip);  
   //inet_ntop(AF_INET, &j, loc.endip, INET6_ADDRSTRLEN);
 
   unsigned char* byte = pos; // 标志字节
@@ -316,18 +187,18 @@ bool ip_finder::get_ip_original_info(const std::string& ipstr, std::string& coun
       {  
       case REDIRECT_MODE_2:
         {  
-          loc.pcountry_ = search + get_long3(pos);  
-          pos = search + countryOffset + 4;  
-          loc.parea_ = get_area(search, pos);  
+			loc.pcountry_ = search + get_long3(pos);  
+			pos = search + countryOffset + 4;  
+			loc.parea_ = get_area(search, pos);  
         }  
         break;  
       default: 
         {
-          loc.pcountry_ = byte; 
-					if (loc.pcountry_ && loc.pcountry_[0])
-						loc.parea_ = get_area(search, loc.pcountry_ + strlen((const char*)loc.pcountry_) + 1);  
-					else
-						return false;
+			loc.pcountry_ = byte; 
+			if (loc.pcountry_ && loc.pcountry_[0])
+				loc.parea_ = get_area(search, loc.pcountry_ + strlen((const char*)loc.pcountry_) + 1);  
+			else
+				return false;
         }  
         break;  
       }  
@@ -335,17 +206,17 @@ bool ip_finder::get_ip_original_info(const std::string& ipstr, std::string& coun
     break;  
   case REDIRECT_MODE_2:
     {  
-      loc.pcountry_ = search + get_long3(pos);  
-      loc.parea_ = get_area(search, search + offset + 8); // search + offset + 8;
+		loc.pcountry_ = search + get_long3(pos);  
+		loc.parea_ = get_area(search, search + offset + 8); // search + offset + 8;
     }  
     break;  
   default:
     { 
-      loc.pcountry_ = byte; 
-			if (loc.pcountry_ && loc.pcountry_[0])
-				loc.parea_ = get_area(search, loc.pcountry_ + strlen((const char*)loc.pcountry_) + 1); 
-			else
-				return false;
+		loc.pcountry_ = byte; 
+		if (loc.pcountry_ && loc.pcountry_[0])
+			loc.parea_ = get_area(search, loc.pcountry_ + strlen((const char*)loc.pcountry_) + 1); 
+		else
+			return false;
     }  
     break;  
   }  
@@ -354,21 +225,6 @@ bool ip_finder::get_ip_original_info(const std::string& ipstr, std::string& coun
 		country.assign((const char*)loc.pcountry_, strlen((const char*)loc.pcountry_));
 	if (loc.parea_ && loc.parea_[0])
 		area.assign((const char*)loc.parea_, strlen((const char*)loc.parea_));
-
-	if (utf8) {
-		std::string out;
-		if (0 == gb2312toutf8(country, out)) {
-			country = out;
-		} else {
-			country.clear();
-		}
-
-		if (0 == gb2312toutf8(area, out)) {
-			area = out;
-		} else {
-			area.clear();
-		}
-	} 
 
   return true;
 }  
